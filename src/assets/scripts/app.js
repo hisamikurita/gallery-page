@@ -277,8 +277,6 @@ window.addEventListener('mouseup', onTouchUp)
 window.addEventListener('touchstart', onTouchDown)
 window.addEventListener('touchmove', onTouchMove)
 window.addEventListener('touchend', onTouchUp)
-window.addEventListener('wheel', onMouseWheel, {
-    passive: false
-})
+window.addEventListener('wheel', onMouseWheel, {passive: false})
 gsap.ticker.fps(60);
 gsap.ticker.add(raf);
