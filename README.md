@@ -1,6 +1,6 @@
 # gallery-page
 
-● <a href="[[https://hisamikurita.github.io/pokemon-evolution/dist/](https://hisamikurita.github.io/gallery-page/dist/)](https://hisamikurita.github.io/gallery-page/dist/)">DEMO</a>
+● <a href="[https://hisamikurita.github.io/gallery-page/dist/]">DEMO</a>
 
 <img width="1272" alt="ogp" src="https://user-images.githubusercontent.com/47776346/173753526-ebd79e23-ea4a-4758-8c7b-aaff7e8b89a8.png">
 
