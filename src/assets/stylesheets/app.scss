@@ -31,6 +31,7 @@ $gridSideNum: 4; // 横並びの数
 .item {
   width: vw($itemWidth);
   height: vw($itemHeight);
+  background: #000;
 
   // @include sp() {
   //   width: vw_sp(352);
