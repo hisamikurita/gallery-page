@@ -1,4 +1,4 @@
-import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, GridHelper, AxesHelper, Color } from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, GridHelper, AxesHelper, MathUtils } from 'three'
 import Stats from 'stats-js';
 import OrbitControls from "three-orbitcontrols";
 
@@ -32,7 +32,7 @@ export default class Stage {
     this._setScene();
     this._setRender();
     this._setCamera();
-    this._setDev();
+    // this._setDev();
   }
 
   _setScene() {
@@ -40,9 +40,11 @@ export default class Stage {
   }
 
   _setRender() {
-    this.renderer = new WebGLRenderer();
+    this.renderer = new WebGLRenderer({
+      antialias: true,
+      alpha: true,
+    });
     this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setClearColor(new Color(this.renderParam.clearColor));
     this.renderer.setSize(this.renderParam.width, this.renderParam.height);
     const wrapper = document.querySelector("#webgl");
     wrapper.appendChild(this.renderer.domElement);
@@ -70,7 +72,9 @@ export default class Stage {
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
     this.camera.aspect = windowWidth / windowHeight;
-    this.camera.fov = this.cameraParam.fov;
+    this.camera.fov = MathUtils.radToDeg(
+      Math.atan(windowWidth / this.camera.aspect / (2 * this.camera.position.z))
+    ) * 2;
 
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(windowWidth, windowHeight);

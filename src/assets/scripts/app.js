@@ -1,37 +1,20 @@
 import { gsap } from 'gsap';
+import Plane from './module/mesh'
+import Stage from './module/stage'
+import GlElments from './module/gl-elements'
 
 const body = document.querySelector('body');
-const wheelEl = document.querySelector('.wheel');
-const keyEl = document.querySelector('.key');
-const mouseEl = document.querySelector('.mouseMove');
-const mouseStartEl = document.querySelector('.mouseStart');
-const mouseEndEl = document.querySelector('.mouseEnd');
-const mouseDistanceEl = document.querySelector('.mouseDistance');
-const scrollEl = document.querySelector('.scroll');
 const list = document.querySelector('.list');
 const items = document.querySelectorAll('.item');
-const wheelX = document.querySelector('.wheelX');
-const wheelY = document.querySelector('.wheelY');
-const keyX = document.querySelector('.keyX');
-const keyY = document.querySelector('.keyY');
-const startX = document.querySelector('.startX');
-const startY = document.querySelector('.startY');
-const endX = document.querySelector('.endX');
-const endY = document.querySelector('.endY');
-const allDistanceX = document.querySelector('.allDistanceX');
-const allDistanceY = document.querySelector('.allDistanceY');
-const distanceX = document.querySelector('.distanceX');
-const distanceY = document.querySelector('.distanceY');
-const scrollX = document.querySelector('.scrollX');
-const scrollY = document.querySelector('.scrollY');
-const targetX = document.querySelector('.targetX');
-const targetY = document.querySelector('.targetY');
-const currentX = document.querySelector('.currentX');
-const currentY = document.querySelector('.currentY');
+const deviceRatio = window.innerWidth > 767 ? 1.0 : 2.0
+const meshList = [];
+const stage = new Stage()
+stage.init()
+const glElements = new GlElments(items);
+glElements.init()
 
 let isDown = false;
 let keyStrength = 0;
-let timeoutId = null;
 
 const array = [];
 
@@ -43,6 +26,10 @@ for (let i = 0; i < items.length; i++) {
             y: 0
         },
     })
+    meshList.push(
+        new Plane(stage, glElements.optionList[i])
+    )
+    meshList[i].init()
 }
 
 const x = {
@@ -86,11 +73,6 @@ const onTouchDown = (e) => {
     // 過去の移動量を取得しておく
     x.scroll = x.save;
     y.scroll = y.save;
-
-    mouseStartEl.style.color = 'red'
-    mouseEndEl.style.color = 'red'
-    mouseDistanceEl.style.color = 'red'
-    scrollEl.style.color = 'red'
 }
 
 const onTouchMove = (e) => {
@@ -105,11 +87,11 @@ const onTouchMove = (e) => {
     x.end = e.touches ? e.touches[0].clientX : e.clientX
     y.end = e.touches ? e.touches[0].clientY : e.clientY
     // down後に動いた移動量を取得
-    x.distance = (x.start - x.end)
-    y.distance = (y.start - y.end)
+    x.distance = (x.start - x.end) * deviceRatio
+    y.distance = (y.start - y.end) * deviceRatio
     // 目標位置 = down後に動いた移動量 + 過去の移動量
     x.target = x.distance + x.scroll
-    y.target = y.distance + y.scroll
+    y.target = y.distance + y.scroll + x.distance
 
 }
 
@@ -121,38 +103,21 @@ const onTouchUp = () => {
     list.style.pointerEvents = 'auto'
 
     x.mouse += x.distance
-    y.mouse += y.distance
-
-    mouseStartEl.style.color = ''
-    mouseEndEl.style.color = ''
-    mouseDistanceEl.style.color = ''
-    scrollEl.style.color = ''
+    y.mouse += y.distance + x.distance
 }
 
 const onMouseWheel = (e) => {
     e.preventDefault()
 
     x.wheel += e.deltaX
-    y.wheel += e.deltaY
+    y.wheel += e.deltaY + (e.deltaX * 0.5)
 
     // 全てのイベントの総移動量から目標位置を計算
     x.target = x.wheel + x.mouse + x.key
     y.target = y.wheel + y.mouse + y.key
 
-    wheelEl.style.color = 'red'
-    keyEl.style.color = 'red'
-    mouseEl.style.color = 'red'
-
     console.log(x.direction)
     console.log(y.direction)
-
-    // スクロールを停止して0.1s後に処理を実行
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(function () {
-        wheelEl.style.color = ''
-        keyEl.style.color = ''
-        mouseEl.style.color = ''
-    }, 100);
 }
 
 const onKeyDown = (e) => {
@@ -176,20 +141,12 @@ const onKeyDown = (e) => {
     // 全てのイベントの総移動量から目標位置を計算
     x.target = x.key + x.wheel + x.mouse
     y.target = y.key + y.wheel + y.mouse
-
-    wheelEl.style.color = 'red'
-    keyEl.style.color = 'red'
-    mouseEl.style.color = 'red'
 }
 
 const onKeyUp = () => {
     console.log('up')
 
     keyStrength = 0;
-
-    wheelEl.style.color = ''
-    keyEl.style.color = ''
-    mouseEl.style.color = ''
 }
 
 const raf = () => {
@@ -207,15 +164,15 @@ const raf = () => {
 
     // 移動方向を取得
     if (x.save < x.current) {
-        x.direction = 'right'
-    } else if (x.save > x.current) {
         x.direction = 'left'
+    } else if (x.save > x.current) {
+        x.direction = 'right'
     }
 
     if (y.save < y.current) {
-        y.direction = 'bottom'
-    } else if (y.save > y.current) {
         y.direction = 'top'
+    } else if (y.save > y.current) {
+        y.direction = 'bottom'
     }
 
     x.save = x.current;
@@ -225,49 +182,93 @@ const raf = () => {
         const rect = array[i].item.getBoundingClientRect()
 
         // windowの画面外に行った時に、wrapper要素の横幅分ずらしていく
-        if (x.direction === 'right' && rect.left < -rect.width) {
-            console.log('画面外')
-            array[i].extra.x += list.clientWidth
-        }
-        else if (x.direction === 'left' && window.innerWidth < rect.left) {
-            console.log('画面外')
-            array[i].extra.x += -list.clientWidth
+        if (i % 4 - 1 === 0 || i % 4 - 1 === 2) {
+            if (x.direction === 'left' && rect.left < -rect.width) {
+                console.log('画面外')
+                array[i].extra.x += list.clientWidth
+            } else if (x.direction === 'right' && window.innerWidth < rect.left) {
+                console.log('画面外')
+                array[i].extra.x += -list.clientWidth
+            }
+
+            if (y.direction === 'top' && window.innerHeight < rect.top) {
+                console.log('画面外')
+                array[i].extra.y += -list.clientHeight
+            } else if (y.direction === 'bottom' && rect.top < -rect.height) {
+                console.log('画面外')
+                array[i].extra.y += list.clientHeight
+            }
+        } else {
+            if (x.direction === 'left' && rect.left < -rect.width) {
+                console.log('画面外')
+                array[i].extra.x += list.clientWidth
+            } else if (x.direction === 'right' && window.innerWidth < rect.left) {
+                console.log('画面外')
+                array[i].extra.x += -list.clientWidth
+            }
+
+            if (y.direction === 'bottom' && window.innerHeight < rect.top) {
+                console.log('画面外')
+                array[i].extra.y += -list.clientHeight
+            } else if (y.direction === 'top' && rect.top < -rect.height) {
+                console.log('画面外')
+                array[i].extra.y += list.clientHeight
+            }
         }
 
-        if (y.direction === 'top' && window.innerHeight < rect.top) {
-            console.log('画面外')
-            array[i].extra.y += -list.clientHeight
-        }
-        else if (y.direction === 'bottom' && rect.top < -rect.height) {
-            console.log('画面外')
-            array[i].extra.y += list.clientHeight
-        }
+        let finalX = 0
+        let finalY = 0
 
-        const finalX = -x.current + array[i].extra.x
-        const finalY = -y.current + array[i].extra.y
+        finalX = -x.current + array[i].extra.x
+        finalY = -y.current + array[i].extra.y
+
+
+        if (i % 4 - 1 === 0 || i % 4 - 1 === 2) {
+            finalX = (-x.current + array[i].extra.x)
+            finalY = -(-y.current - array[i].extra.y)
+        }
 
         array[i].item.style.transform = `translate(${finalX}px, ${finalY}px)`
     }
 
-    wheelX.textContent = x.wheel
-    wheelY.textContent = y.wheel
-    keyX.textContent = x.key
-    keyY.textContent = y.key
-    startX.textContent = x.start
-    startY.textContent = y.start
-    endX.textContent = x.end
-    endY.textContent = y.end
-    allDistanceX.textContent = x.mouse
-    allDistanceY.textContent = y.mouse
-    distanceX.textContent = x.distance
-    distanceY.textContent = y.distance
-    scrollX.textContent = x.scroll
-    scrollY.textContent = y.scroll
-    targetX.textContent = x.target
-    targetY.textContent = y.target
-    currentX.textContent = x.current
-    currentY.textContent = y.current
+    stage.onRaf()
+    glElements._updateOptionList()
+    for (let i = 0; i < array.length; i++) {
+        const strength = ((y.current - y.target)) * 0.10
+        if (i % 4 - 1 === 0 || i % 4 - 1 === 2) {
+            meshList[i]._setStrength(strength)
+        }
+        else{
+            meshList[i]._setStrength(-strength)
+        }
+        meshList[i].onRaf()
+    }
 };
+
+const onResize = () => {
+    console.log('resize')
+
+    x.current = 0
+    y.current = 0
+    x.wheel = 0
+    y.wheel = 0
+    x.allDistance = 0
+    y.allDistance = 0
+    x.save = 0
+    y.save = 0
+    x.target = 0
+    y.target = 0
+
+    for (let i = 0; i < array.length; i++) {
+        array[i].extra.x = 0
+        array[i].extra.y = 0
+    }
+
+    stage.onResize()
+    for (let i = 0; i < array.length; i++) {
+        meshList[i].onResize()
+    }
+}
 
 window.addEventListener('keydown', onKeyDown)
 window.addEventListener('keyup', onKeyUp)
@@ -277,6 +278,7 @@ window.addEventListener('mouseup', onTouchUp)
 window.addEventListener('touchstart', onTouchDown)
 window.addEventListener('touchmove', onTouchMove)
 window.addEventListener('touchend', onTouchUp)
-window.addEventListener('wheel', onMouseWheel, {passive: false})
+window.addEventListener('wheel', onMouseWheel, { passive: false})
+window.addEventListener('resize', onResize)
 gsap.ticker.fps(60);
 gsap.ticker.add(raf);
