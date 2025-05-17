@@ -8,6 +8,10 @@
 * Clone repository<br>
 * Install Node.js<br>
 * Create an `.env` file and copy the contents of `.env-sample`. <br>
+```
+  cp .env-sample .env
+```
+
 * Run following commands<br>
 ```
   npm install
@@ -20,5 +24,5 @@
 ```
 
 ## Reference
-<a href="[https://garden-eight.com/archives]">https://garden-eight.com/archives</a><br>
-[https://tympanus.net/codrops/2021/01/05/creating-an-infinite-auto-scrolling-gallery-using-webgl-with-ogl-and-glsl-shaders/](https://tympanus.net/codrops/2021/01/05/creating-an-infinite-auto-scrolling-gallery-using-webgl-with-ogl-and-glsl-shaders/)
+- <a href="[https://garden-eight.com/archives]">https://garden-eight.com/archives</a><br>
+- [codrops](https://tympanus.net/codrops/2021/01/05/creating-an-infinite-auto-scrolling-gallery-using-webgl-with-ogl-and-glsl-shaders/)
